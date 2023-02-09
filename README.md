@@ -18,6 +18,8 @@ $ terraform plan
 $ terrform apply
 
 $ terraform detroy
+
+$ terraforn validate
 ```
 
 ### Terraform init
@@ -46,6 +48,10 @@ $ terraform detroy
 
 - Will destroy everything in the config link to the project 
 - Never run for a live project !
+
+### Terraform validate
+
+- WIll validate the terraform scripts
 
 
 ## State

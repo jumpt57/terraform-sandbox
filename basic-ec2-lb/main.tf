@@ -25,7 +25,7 @@ provider "aws" {
 resource "aws_instance" "instance_1" {
   ami = "ami-0aa7d40eeae50c9a9"
   instance_type = "t2.micro"
-  security_groups = [aws_security_group.instances.id]
+  vpc_security_group_ids = [aws_security_group.instances.id]
   user_data = <<-EOF
               #!/bin/bash
               echo "Hello world 1" > index.html
@@ -36,7 +36,7 @@ resource "aws_instance" "instance_1" {
 resource "aws_instance" "instance_2" {
   ami = "ami-0aa7d40eeae50c9a9"
   instance_type = "t2.micro"
-  security_groups = [aws_security_group.instances.id]
+  vpc_security_group_ids = [aws_security_group.instances.id]
   user_data = <<-EOF
               #!/bin/bash
               echo "Hello world 2" > index.html
@@ -48,8 +48,11 @@ data "aws_vpc" "default_vpc" {
   default = true
 }
 
-data "aws_subnet_ids" "default_subnet" {
-  vpc_id = data.aws_vpc.default_vpc.id
+data "aws_subnets" "default_subnet" {
+  filter {
+    name = "vpc-id"
+    values = [data.aws_vpc.default_vpc.id]
+  }
 }
 
 resource "aws_security_group" "instances" {
@@ -85,6 +88,7 @@ resource "aws_lb_target_group" "instances" {
   name = "target-group"
   port = 8080
   protocol = "HTTP"
+  vpc_id = data.aws_vpc.default_vpc.id
 
   health_check {
     path = "/"
@@ -148,7 +152,7 @@ resource "aws_security_group_rule" "allow_alb_http_outbound" {
 resource "aws_lb" "load_balancer" {
   name = "web-app-lb"
   load_balancer_type = "application"
-  subnets = data.aws_subnet_ids.default_subnet.ids
+  subnets = data.aws_subnets.default_subnet.ids
   security_groups = [aws_security_group.alb.id]
 }
 
