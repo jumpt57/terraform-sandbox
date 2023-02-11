@@ -1,2 +1,5 @@
-bucket_name = "devops-directive-web-app-data"
-domain = "jumpt57.link"
+instance_name = "hello-world"
+ami           = "ami-0aa7d40eeae50c9a9"
+instance_type = "t2.micro"
+region        = "us-east-1"
+domain        = "jumpt57.link"
