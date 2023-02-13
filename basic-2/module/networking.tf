@@ -1,57 +1,3 @@
-terraform {
-
-  backend "s3" {
-    bucket         = "jumpt57-terraform-sandbox-tf-state"
-    key            = "tf-infra-basic/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-state-locking"
-    encrypt        = true
-  }
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "us-east-1"
-}
-
-locals {
-  extra_tag = "extra-tag"
-}
-
-# EC2
-
-resource "aws_instance" "instance_1" {
-  ami                    = var.ami
-  instance_type          = var.instance_type
-  vpc_security_group_ids = [aws_security_group.instances.id]
-  user_data              = <<-EOF
-              #!/bin/bash
-              echo "Hello world 1" > index.html
-              python3 -m http.server 8080 &
-              EOF
-  tags = {
-    Name     = var.instance_name
-    ExtraTag = local.extra_tag
-  }
-}
-
-resource "aws_instance" "instance_2" {
-  ami                    = var.ami
-  instance_type          = var.instance_type
-  vpc_security_group_ids = [aws_security_group.instances.id]
-  user_data              = <<-EOF
-              #!/bin/bash
-              echo "Hello world 2" > index.html
-              python3 -m http.server 8080 &
-              EOF
-}
-
 data "aws_vpc" "default_vpc" {
   default = true
 }
@@ -64,7 +10,7 @@ data "aws_subnets" "default_subnet" {
 }
 
 resource "aws_security_group" "instances" {
-  name = "instance-security-group"
+  name = "${var.app_name}-${var.environment_name}-instance-security-group"
 }
 
 resource "aws_security_group_rule" "allow_http_inbound" {
@@ -136,7 +82,7 @@ resource "aws_lb_listener_rule" "instances" {
 }
 
 resource "aws_security_group" "alb" {
-  name = "alb-security-group"
+  name = "${var.app_name}-${var.environment_name}-alb-security-group"
 }
 
 resource "aws_security_group_rule" "allow_alb_http_inbound" {
@@ -158,60 +104,8 @@ resource "aws_security_group_rule" "allow_alb_http_outbound" {
 }
 
 resource "aws_lb" "load_balancer" {
-  name               = "web-app-lb"
+  name               = "${var.app_name}-${var.environment_name}-web-app-lb"
   load_balancer_type = "application"
   subnets            = data.aws_subnets.default_subnet.ids
   security_groups    = [aws_security_group.alb.id]
-}
-
-# Route53
-
-resource "aws_route53_zone" "primary" {
-  name = var.domain
-}
-
-resource "aws_route53_record" "root" {
-  name    = var.domain
-  type    = "A"
-  zone_id = aws_route53_zone.primary.zone_id
-
-  alias {
-    evaluate_target_health = true
-    name                   = aws_lb.load_balancer.dns_name
-    zone_id                = aws_lb.load_balancer.zone_id
-  }
-}
-
-
-# Terraform remote backend
-
-resource "aws_s3_bucket" "terraform_state" {
-  bucket        = "jumpt57-terraform-sandbox-tf-state"
-  force_destroy = true
-}
-
-resource "aws_s3_bucket_versioning" "terraform_state_versioning" {
-  bucket = aws_s3_bucket.terraform_state.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_encryption" {
-  bucket = aws_s3_bucket.terraform_state.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "terraform-state-locking"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
 }

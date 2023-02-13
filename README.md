@@ -20,6 +20,8 @@ $ terrform apply
 $ terraform detroy
 
 $ terraforn validate
+
+$ terraform fmt
 ```
 
 ### Terraform init
@@ -72,3 +74,354 @@ $ terraforn validate
 - Collaboration possible
 - Automation possible
 - Increased complexity
+
+
+## Variables
+
+### Variable types
+
+1. Input variables 
+
+```
+variable "my_var" {
+    decription = ""
+    type = string
+    default = ""
+}
+
+var.<name>
+```
+
+2. Local variables
+```
+locals {
+    test = ""
+    test_2 = ""
+}
+
+
+local.<name>
+```
+
+3. Output variables
+```
+output "my_variable" {
+    value = aws_*.name.arn
+}
+```
+
+### Setting Input Variables
+
+- Manuel entry during plan / apply
+- Default value in declaration block
+- TF_VAR_<name> env variables
+- terraform.tfvars file
+- *.auto.tfvars file
+- Command line -var or -var-file
+- 
+
+```
+$ terraform apply -var-file=
+$ terraform apply -var="db_user=dffsdfsdfsd"
+```
+
+### Types & Validation
+
+#### Primitives
+
+- string
+- number
+- bool
+- 
+
+#### Complex
+
+- list(<TYPE>)
+- set(<TYPE>)
+- map(<TYPE>)
+- object({<ATTR NAME> = <TYPE>, ...})
+- tuple([<TYPE>, ...])
+- 
+
+#### Validation
+
+- Type checking happens automatically
+- Custom conditions can also be enforced
+- 
+
+### Sensitive Data
+
+```
+variable "" {
+    description = ""
+    type = string
+    sensitive = true
+}
+```
+
+- TV_VAR_variable
+- -var (retrived from secret manager at runtime)
+- 
+
+Can also use external secret store like :
+- AWS Secrets Manager
+
+## Expressions + Functions
+
+### Expressions
+
+- Template strings
+- Operatos (!, -, *, /, %, >, ==, etc...)
+- Conditionals (cond ? true : false)
+- For ([for o in var.list : o.id])
+- Splat (var.list[*].id)
+- Dynamic Blocks
+- Constraints (Type & Version)
+- 
+
+### Functions
+
+- Numeric
+- String
+- Collection
+- Encoding
+- Filesystem
+- Date & Time
+- Hash & Crypto
+- Type Conversion
+- 
+
+## Meta-arguments
+
+### depends_on
+
+- Will enforce ordering
+
+```
+
+resource "aws_iam_role_policy" "example" {
+    role = aws_iam_role.example.name
+}
+
+resource "aws_iam_role_policy" "example" {
+    name = "example"
+    role = aws_iam_role.*
+    policy = jsonencode({
+        "Statement" = [{
+            "Action" = "s3:*"
+            "Effect" = "Allow"
+        }]
+    })
+}
+
+resource "aws_instance" "example" {
+    ami = ""
+    instance_type = ""
+    iam_instance_profile = aws_iam_instance_profile.*
+    
+    depends_on = [
+        aws_iam_role_policy.example, <---- Would fail if aws_iam_role_policy does not exist yet
+    ]
+}
+
+```
+
+### count
+
+- Allows for createing of multiple resource / Module from single block
+- Great if you need multiple resources that are the same
+
+```
+
+resource "awa_instance" "server" {
+
+    count = 4 # create four EC2 instances
+
+    ami = ""
+    instance_type = ""
+    
+    tags = {
+        Name = "Server ${count.index}"
+    }
+    
+    
+}
+
+```
+
+### for_each
+
+- Allows for creation of multiple resource / module from single block
+- Allows more control to customize each resource (unlike count)
+
+```
+
+locals {
+    subnet_ids = toset([
+        "subnet-abcde",
+        "subnet-0987"
+    ])
+}
+
+resource "aws_instance" "server" { 
+
+    for_each = local.subnet_ids
+
+    ami = ""
+    instance_type = ""
+    subnet_id = each.key
+    
+    tags = {
+        Name = "Server ${each.key}"
+    }
+
+}
+
+
+```
+
+### lifecycle
+
+- To control terraform behavior for specific resources
+- create_before_destroy can help with zero downtime deployments
+- ignore_changes prevents terraform from trying to revert metadata being set elsewhere
+- prevent_destroy causes terraform to reject any plan which would destroy this resource
+
+```
+resource "aws_instance" "server" { 
+
+
+
+    ami = ""
+    instance_type = ""
+    
+    
+    lifecycle {
+        create_before_destroy = true
+        ignore_changes = [
+            tags
+        ]
+        
+    }
+
+}
+
+
+```
+
+
+## Provisioners
+
+Perform action on local or remote machine
+
+- file
+- local-exec
+- remote-exec
+- vendor
+    - chef
+    - puppet
+    - 
+    - 
+
+## Modules
+
+- Possible to abstract some behavior to be reused somewhere else
+- Can be created by infra specialist to be used by app devs
+- 
+
+### Types
+
+- Root Module: Default module containing all .tf files in main working directory
+- Child Module : A separate external module referred to form a .tf file
+
+Modules sources :
+- local paths
+- terraform registry
+- github
+- bitbucket
+- Generic git repo
+- Http Urls
+- S3 buckets
+- GCS buckets
+
+
+1. Local Paths
+
+```
+module "web-app" {
+    source = "../web_app"
+}
+```
+
+2. Terraform Registry
+
+```
+module "consul" {
+    source = "hashicorp/consul/aws"
+    version = "0.1.0"
+}
+```
+
+3. Github
+
+HTTS
+```
+module "example" {
+    source = "github.com/hashicorp/example?ref=v1.2.0"
+}
+```
+
+SSH
+```
+module "example" {
+    source = "git@github.com/hashicorp/example.git"
+}
+```
+
+Generic
+```
+module "example" {
+    source = "git::ssh//username@example.com/storage.git"
+}
+```
+
+### Inputs + Meta-arguments
+
+```
+module "example" {
+    source = ""
+    
+    # Input variables
+    bucket_name = ""
+    domain = ""
+}
+```
+
+How to build a good module ?
+
+- Raises the abstraction level from base resource types
+- Groups resource in a logical fashion
+- Exposes input variables to allow necessary cutomization + composition
+- Provide useful defaults
+- Returns outputs to make further integrations possible
+
+## Environments
+
+### Workspaces
+
+Multiple named sections within a single backend
+
+1. Pros
+- Easy to get started
+- Convenient terraform.workspace expression
+- Minimizes Code Duplication
+- 
+
+2. Cons
+- Prone to human error
+- State stored within same backendCodebase doesn't unambiguously show deployment configurations
+- 
+
+### File Structure
+
+- Directory layout provides separation, modules provide reuse
