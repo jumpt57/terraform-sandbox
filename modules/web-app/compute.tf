@@ -7,6 +7,9 @@ resource "aws_instance" "instance_1" {
               echo "Hello world 1" > index.html
               python3 -m http.server 8080 &
               EOF
+  tags = {
+    Name = "${var.environment_name}-instance-1"
+  }
 }
 
 resource "aws_instance" "instance_2" {
@@ -18,4 +21,8 @@ resource "aws_instance" "instance_2" {
               echo "Hello world 2" > index.html
               python3 -m http.server 8080 &
               EOF
+              
+  tags = {
+    Name = "${var.environment_name}-instance-2"
+  }
 }

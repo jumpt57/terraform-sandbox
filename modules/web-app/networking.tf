@@ -10,7 +10,7 @@ data "aws_subnets" "default_subnet" {
 }
 
 resource "aws_security_group" "instances" {
-  name = "${var.app_name}-${var.environment_name}-instance-security-group"
+  name = "${var.environment_name}-${var.app_name}-instance-security-group"
 }
 
 resource "aws_security_group_rule" "allow_http_inbound" {
@@ -39,7 +39,7 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_lb_target_group" "instances" {
-  name     = "target-group"
+  name     = "${var.environment_name}-${var.app_name}-tg"
   port     = 8080
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default_vpc.id
@@ -82,7 +82,7 @@ resource "aws_lb_listener_rule" "instances" {
 }
 
 resource "aws_security_group" "alb" {
-  name = "${var.app_name}-${var.environment_name}-alb-security-group"
+  name = "${var.environment_name}-${var.app_name}-alb-security-group"
 }
 
 resource "aws_security_group_rule" "allow_alb_http_inbound" {
@@ -104,7 +104,7 @@ resource "aws_security_group_rule" "allow_alb_http_outbound" {
 }
 
 resource "aws_lb" "load_balancer" {
-  name               = "${var.app_name}-${var.environment_name}-web-app-lb"
+  name               = "${var.environment_name}-${var.app_name}-web-app-lb"
   load_balancer_type = "application"
   subnets            = data.aws_subnets.default_subnet.ids
   security_groups    = [aws_security_group.alb.id]

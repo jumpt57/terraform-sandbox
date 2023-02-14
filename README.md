@@ -118,7 +118,6 @@ output "my_variable" {
 - terraform.tfvars file
 - *.auto.tfvars file
 - Command line -var or -var-file
-- 
 
 ```
 $ terraform apply -var-file=
@@ -132,7 +131,6 @@ $ terraform apply -var="db_user=dffsdfsdfsd"
 - string
 - number
 - bool
-- 
 
 #### Complex
 
@@ -141,13 +139,11 @@ $ terraform apply -var="db_user=dffsdfsdfsd"
 - map(<TYPE>)
 - object({<ATTR NAME> = <TYPE>, ...})
 - tuple([<TYPE>, ...])
-- 
 
 #### Validation
 
 - Type checking happens automatically
 - Custom conditions can also be enforced
-- 
 
 ### Sensitive Data
 
@@ -161,7 +157,6 @@ variable "" {
 
 - TV_VAR_variable
 - -var (retrived from secret manager at runtime)
-- 
 
 Can also use external secret store like :
 - AWS Secrets Manager
@@ -177,7 +172,6 @@ Can also use external secret store like :
 - Splat (var.list[*].id)
 - Dynamic Blocks
 - Constraints (Type & Version)
-- 
 
 ### Functions
 
@@ -189,7 +183,6 @@ Can also use external secret store like :
 - Date & Time
 - Hash & Crypto
 - Type Conversion
-- 
 
 ## Meta-arguments
 
@@ -320,8 +313,6 @@ Perform action on local or remote machine
 - vendor
     - chef
     - puppet
-    - 
-    - 
 
 ## Modules
 
@@ -415,13 +406,43 @@ Multiple named sections within a single backend
 - Easy to get started
 - Convenient terraform.workspace expression
 - Minimizes Code Duplication
-- 
 
 2. Cons
 - Prone to human error
-- State stored within same backendCodebase doesn't unambiguously show deployment configurations
-- 
+- State stored within same backend codebase doesn't unambiguously show deployment configurations
+
+#### Commands
+
+```
+$ terraform workspace list
+$ terraform workspace new production
+```
+
 
 ### File Structure
 
 - Directory layout provides separation, modules provide reuse
+
+1. Pros
+- Isolation of backends
+    - Improved security
+    - Decreased potential for human error
+- Codebase fully represents deployed state
+
+2. Cons 
+- Multiple terraform apply required to provision environments
+- More code duplicationm but can be minimized with modules
+
+
+Also :
+- Further separation (at logical component groups) useful for larger projects
+    - Isolate things that conge frequently from those which don't
+- Referencing resources across configurations is possible using terraform_remote_state
+
+### Terragrunt
+
+Tool by gruntwork.io that provides utilities to make certain Terraform use cases easier
+
+- Keeping Terraform code DRY
+- Executing commands across multiple TF configs
+- Working with multiple cloud accounts

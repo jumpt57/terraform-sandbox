@@ -2,7 +2,7 @@ terraform {
 
   backend "s3" {
     bucket         = "jumpt57-terraform-sandbox-tf-state"
-    key            = "tf-infra-basic-2/terraform.tfstate"
+    key            = "tf-infra-workspaces/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "terraform-state-locking"
     encrypt        = true
@@ -20,22 +20,15 @@ provider "aws" {
   region = "us-east-1"
 }
 
+locals {
+  environment_name = terraform.workspace
+}
+
 module "web_app_1" {
   source = "../modules/web-app"
 
   domain           = "jumpt57.link"
   app_name         = "web-app-1"
-  environment_name = "dev"
+  environment_name = local.environment_name
   instance_type    = "t2.micro"
 }
-
-# module "web_app_2" {
-#   source = "./module"
-
-#   domain           = "stage.jumpt57.link"
-#   app_name         = "web-app-2"
-#   environment_name = "stage"
-#   instance_type    = "t2.micro"
-#   create_dns_zone  = true
-# }
-
