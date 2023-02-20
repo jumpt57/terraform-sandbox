@@ -1,6 +1,6 @@
 # terraform-sandbox
 
-All documentation was moved to (here)[/documentation].
+All documentation was moved to [here](/documentation).
 
 Available : 
 - cli
